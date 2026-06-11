@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mark FB1">
+<meta name="theme-color" content="#0F3A5D">
+<title>Mark FB1 · Stenriket 5</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F3A5D; --steel:#34667E; --paper:#F5F3ED; --card:#FCFBF8;
+    --koppar:#B4551A; --koppar-dark:#8F4413; --cyan:#1AAFC4; --gron:#2E7D43;
+    --line:#C9D3DC; --text:#22303C;
+    --disp:'Barlow Condensed',-apple-system,sans-serif;
+    --ui:'Barlow',-apple-system,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;position:fixed;width:100%;
+    font-family:var(--ui);background:var(--paper);color:var(--text);
+    overscroll-behavior:none}
+  /* ---------- stämpelhuvud ---------- */
+  header{
+    position:relative;z-index:30;background:var(--card);
+    border-bottom:2px solid var(--ink);
+    padding:calc(env(safe-area-inset-top) + 8px) 12px 8px 12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  header::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:1px;background:var(--ink);opacity:.5}
+  .stamp h1{font-family:var(--disp);font-weight:700;font-size:21px;line-height:1;
+    letter-spacing:.04em;color:var(--ink);text-transform:uppercase}
+  .stamp small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--steel);margin-top:2px}
+  .spacer{flex:1}
+  .stat{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);
+    border:1px solid var(--line);background:#fff;border-radius:4px;
+    padding:5px 9px;text-align:center;line-height:1.05;min-width:46px}
+  .stat small{display:block;font-family:var(--ui);font-weight:600;font-size:8px;
+    letter-spacing:.12em;color:var(--steel)}
+  button{font-family:var(--ui);border:none;background:none;cursor:pointer}
+  .hbtn{font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:.06em;
+    text-transform:uppercase;color:#fff;background:var(--ink);border-radius:5px;
+    padding:9px 11px;line-height:1}
+  .hbtn.warn{background:var(--koppar)}
+  /* ---------- karta ---------- */
+  #vy{position:absolute;inset:0;top:0;bottom:0;overflow:hidden;touch-action:none;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(15,58,93,.05), transparent 60%),
+      var(--paper)}
+  #vyramen{position:absolute;left:0;right:0;bottom:0;z-index:5}
+  #stage{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+  #stage img{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;
+    pointer-events:none;box-shadow:0 2px 18px rgba(15,58,93,.25)}
+  /* nål */
+  .pin{position:absolute;width:34px;height:34px;margin:-30px 0 0 -17px;
+    transform:scale(var(--invz,1));transform-origin:50% 100%;z-index:10}
+  .pin .knopp{width:30px;height:30px;margin:0 auto;border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);background:var(--koppar);border:2px solid #fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+  .pin .knopp span{transform:rotate(45deg);color:#fff;font-family:var(--disp);
+    font-weight:700;font-size:12.5px;letter-spacing:0}
+  .pin.g .knopp{background:var(--steel)}
+  .pin.vald .knopp{background:var(--cyan)}
+  .pin.ny .knopp{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  @keyframes pop{0%{transform:rotate(-45deg) scale(.2)}100%{transform:rotate(-45deg) scale(1)}}
+  .pin .synk{position:absolute;top:-3px;right:-1px;width:11px;height:11px;border-radius:50%;
+    background:var(--gron);border:1.5px solid #fff;display:none}
+  .pin.klar .synk{display:block}
+  /* ---------- hintrad ---------- */
+  #hint{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);
+    z-index:20;background:rgba(15,58,93,.92);color:#fff;border-radius:8px;
+    padding:11px 14px;font-size:13.5px;line-height:1.45;display:flex;gap:12px;align-items:center}
+  #hint b{font-family:var(--disp);letter-spacing:.05em}
+  #hint button{color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:5px;
+    padding:7px 12px;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  /* ---------- bottensheet ---------- */
+  .skikt{position:fixed;inset:0;background:rgba(15,38,58,.45);z-index:40;
+    opacity:0;pointer-events:none;transition:opacity .18s}
+  .skikt.synlig{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--card);
+    border-top:3px solid var(--ink);border-radius:14px 14px 0 0;
+    max-height:86vh;display:flex;flex-direction:column;
+    transform:translateY(105%);transition:transform .22s cubic-bezier(.3,1,.4,1);
+    box-shadow:0 -8px 30px rgba(15,58,93,.25)}
+  .sheet.synlig{transform:translateY(0)}
+  .sheet .grepp{width:44px;height:4px;border-radius:2px;background:var(--line);margin:8px auto 0}
+  .sheet .inre{overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+    padding:10px 16px calc(env(safe-area-inset-bottom) + 18px) 16px}
+  .sheet h2{font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:.03em;
+    text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:10px}
+  .sheet h2 .nrbadge{background:var(--koppar);color:#fff;border-radius:6px;padding:3px 10px;
+    font-size:19px}
+  .sheet h2 .nrbadge.g{background:var(--steel)}
+  .etikett{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--steel);margin:14px 0 6px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chips.scroll{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:7px;
+    padding:9px 13px;font-size:13.5px;font-weight:500;color:var(--text);white-space:nowrap}
+  .chip.vald{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+  .chip.bet{font-family:var(--disp);font-weight:700;font-size:17px;min-width:46px;text-align:center}
+  textarea{width:100%;border:1.5px solid var(--line);border-radius:8px;background:#fff;
+    font-family:var(--ui);font-size:15px;padding:10px;min-height:64px;resize:none;color:var(--text)}
+  textarea:focus{outline:2px solid var(--cyan);border-color:transparent}
+  .foton{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+  .foton .tumnagel{position:relative;aspect-ratio:1;border-radius:7px;overflow:hidden;
+    border:1.5px solid var(--line);background:#eee}
+  .foton img{width:100%;height:100%;object-fit:cover;display:block}
+  .foton .upl{position:absolute;right:3px;top:3px;width:12px;height:12px;border-radius:50%;
+    background:var(--gron);border:1.5px solid #fff;display:none}
+  .foton .tumnagel.klar .upl{display:block}
+  .knapprad{display:flex;gap:10px;margin-top:16px}
+  .stor{flex:1;font-family:var(--disp);font-weight:700;font-size:18px;letter-spacing:.07em;
+    text-transform:uppercase;border-radius:9px;padding:16px 10px;line-height:1}
+  .stor.kamera{background:var(--koppar);color:#fff;box-shadow:0 3px 0 var(--koppar-dark)}
+  .stor.kamera:active{transform:translateY(2px);box-shadow:0 1px 0 var(--koppar-dark)}
+  .stor.ok{background:var(--ink);color:#fff}
+  .stor.tunn{background:#fff;border:1.5px solid var(--line);color:var(--steel);flex:0 0 auto;padding:16px 14px}
+  .radera{width:100%;margin-top:14px;color:#A02C2C;font-size:13px;font-weight:600;
+    letter-spacing:.06em;text-transform:uppercase;padding:8px}
+  /* lista */
+  .lrad{display:flex;align-items:center;gap:11px;padding:10px 2px;border-bottom:1px solid #E5E0D6;width:100%;text-align:left}
+  .lrad .nr{font-family:var(--disp);font-weight:700;font-size:16px;color:#fff;
+    background:var(--koppar);border-radius:6px;min-width:42px;text-align:center;padding:6px 4px}
+  .lrad .nr.g{background:var(--steel)}
+  .lrad .mitt{flex:1;min-width:0}
+  .lrad .mitt b{font-size:14.5px;color:var(--ink)}
+  .lrad .mitt span{display:block;font-size:12px;color:var(--steel);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .lrad img{width:46px;height:46px;border-radius:6px;object-fit:cover;border:1px solid var(--line)}
+  .tom{color:var(--steel);font-size:14px;padding:18px 0;text-align:center}
+  /* fullbild */
+  #full{position:fixed;inset:0;z-index:70;background:rgba(8,20,30,.96);display:none;
+    flex-direction:column}
+  #full.synlig{display:flex}
+  #full img{flex:1;object-fit:contain;min-height:0}
+  #full .rad{display:flex;gap:10px;padding:12px 16px calc(env(safe-area-inset-bottom) + 14px)}
+  #full .rad button{flex:1;color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:8px;
+    padding:13px;font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+  #full .rad button.bort{border-color:#D06A6A;color:#F0A0A0}
+  /* toast */
+  #toast{position:fixed;top:calc(env(safe-area-inset-top) + 64px);left:50%;transform:translateX(-50%) translateY(-12px);
+    z-index:80;background:var(--ink);color:#fff;border-radius:7px;padding:10px 16px;
+    font-size:13.5px;font-weight:500;opacity:0;transition:all .22s;pointer-events:none;
+    max-width:86vw;text-align:center}
+  #toast.synlig{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="stamp">
+    <h1>Mark FB1</h1>
+    <small>Kv. Stenriket 5 · L-31.1-001</small>
+  </div>
+  <div class="spacer"></div>
+  <div class="stat" id="statPunkter">0<small>punkter</small></div>
+  <div class="stat" id="statFoton">0<small>foton</small></div>
+  <button class="hbtn" id="btnLista">Lista</button>
+  <button class="hbtn warn" id="btnSynk">Synka</button>
+</header>
+
+<div id="vy">
+  <div id="stage">
+    <img id="karta" src="https://dhvvpqznfcohakhynndi.supabase.co/storage/v1/object/public/inspectiq-stenriket/karta_mark.jpg" crossorigin="anonymous" alt="Situationsplan L-31.1-001">
+  </div>
+</div>
+
+<div id="hint">
+  <div><b>Tryck på kartan</b> där du står: kameran öppnas och bilden kopplas till punkten. Zooma med två fingrar. Tryck på en nål för att se eller komplettera den.</div>
+  <button id="hintOk">OK</button>
+</div>
+
+<div class="skikt" id="skikt"></div>
+
+<!-- punkt-sheet -->
+<div class="sheet" id="sheetPunkt">
+  <div class="grepp"></div>
+  <div class="inre">
+    <h2><span class="nrbadge" id="pNr">M1</span><span id="pTitel">Ny punkt</span>
+      <span class="spacer"></span>
+      <button id="btnSerie" class="chip" style="font-size:12px">Generell punkt (G)</button>
+    </h2>
+    <div class="etikett">Delområde</div>
+    <div class="chips scroll" id="pOmraden"></div>
+    <div class="etikett">Beteckning</div>
+    <div class="chips" id="pBet"></div>
+    <div class="etikett">Notering</div>
+    <textarea id="pNot" placeholder="Diktera med mikrofonen på tangentbordet, eller skriv kort."></textarea>
+    <div class="etikett">Foton (översikt + närbild)</div>
+    <div class="foton" id="pFoton"></div>
+    <div class="knapprad">
+      <button class="stor kamera" id="btnKamera">Ta bild</button>
+      <button class="stor ok" id="btnKlar">Klar</button>
+    </div>
+    <div class="knapprad" style="margin-top:10px">
+      <button class="stor tunn" id="btnDela" style="flex:1">Dela punktens foton</button>
+    </div>
+    <button class="radera" id="btnRadera">Ta bort punkt</button>
+  </div>
+</div>
+
+<!-- list-sheet -->
+<div class="sheet" id="sheetLista">
+  <div class="grepp"></div>
+  <div class="inre">
+    <h2>Punktlista</h2>
+    <div id="listaRader"></div>
+    <div class="knapprad">
+      <button class="stor tunn" id="btnSammanst" style="flex:1">Dela sammanställning som text</button>
+    </div>
+  </div>
+</div>
+
+<div id="full">
+  <img id="fullImg" alt="">
+  <div class="rad">
+    <button id="fullStang">Stäng</button>
+    <button class="bort" id="fullBort">Ta bort bilden</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" accept="image/*" capture="environment" id="kamIn" style="display:none">
+
+<script>
+'use strict';
+/* ============ konfiguration ============ */
+const SUPA_URL = 'https://dhvvpqznfcohakhynndi.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRodnZwcXpuZmNvaGFraHlubmRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3MTI5MzEsImV4cCI6MjA4NzI4ODkzMX0.mPCMXKBgcxRAbJdq9mCipxZxUt3d0N6EGf82i5dfqKQ';
+const BUCKET = 'inspectiq-stenriket';
+const TABLE = 'inspectiq_punkter';
+const PROJEKT = 'stenriket5-mark-fb1';
+const OMRADEN = ['Hårdgjorda ytor','Kantstöd, murar, trappor','Växtbäddar och planteringar',
+  'Gräsytor','Utrustning','Avvattning och VA','Återställning av befintligt','Generellt'];
+const BETS = ['E','B','S','U','N','A'];
+
+/* ============ state ============ */
+let punkter = [];            // {id,nr,serie,x,y,omrade,bet,not,ts,metaSynkad}
+let foton = [];              // {id,punktId,blob,ts,uploaded}
+let aktivPunkt = null;
+let nyPunktTemp = null;      // innan första sparning
+const $ = s => document.querySelector(s);
+
+/* ============ IndexedDB ============ */
+let db;
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r = indexedDB.open('inspectiq-fb1-mark', 1);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if(!d.objectStoreNames.contains('punkter')) d.createObjectStore('punkter',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('foton')) d.createObjectStore('foton',{keyPath:'id'});
+    };
+    r.onsuccess = ()=>{db = r.result; res();};
+    r.onerror = ()=>rej(r.error);
+  });
+}
+function idbPut(store,val){return new Promise((res,rej)=>{
+  const t=db.transaction(store,'readwrite');t.objectStore(store).put(val);
+  t.oncomplete=res;t.onerror=()=>rej(t.error);});}
+function idbDel(store,key){return new Promise((res,rej)=>{
+  const t=db.transaction(store,'readwrite');t.objectStore(store).delete(key);
+  t.oncomplete=res;t.onerror=()=>rej(t.error);});}
+function idbAll(store){return new Promise((res,rej)=>{
+  const t=db.transaction(store,'readonly');const q=t.objectStore(store).getAll();
+  q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+
+/* ============ karta: pan & zoom ============ */
+const vy = $('#vy'), stage = $('#stage'), karta = $('#karta');
+let T = {x:0, y:0, s:1}, minS = 0.05;
+let imgW = 0, imgH = 0;
+
+function applyT(){
+  stage.style.transform = `translate(${T.x}px,${T.y}px) scale(${T.s})`;
+  stage.style.setProperty('--invz', (1/T.s).toFixed(4));
+  document.querySelectorAll('.pin').forEach(p=>p.style.setProperty('--invz',(1/T.s).toFixed(4)));
+}
+function fitKarta(){
+  const r = vy.getBoundingClientRect();
+  const s = Math.min(r.width/imgW, r.height/imgH);
+  minS = s*0.8;
+  T = {x:(r.width-imgW*s)/2, y:(r.height-imgH*s)/2, s};
+  applyT();
+}
+karta.addEventListener('load', ()=>{
+  imgW = karta.naturalWidth; imgH = karta.naturalHeight;
+  stage.style.width = imgW+'px'; stage.style.height = imgH+'px';
+  fitKarta();
+});
+window.addEventListener('resize', ()=>{ if(imgW) fitKarta(); });
+
+const ptrs = new Map();
+let panStart=null, pinchStart=null, tapKand=null, tapTimer=null, sistaTapp=0;
+
+vy.addEventListener('pointerdown', e=>{
+  vy.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(ptrs.size===1){
+    panStart = {px:e.clientX, py:e.clientY, tx:T.x, ty:T.y, t:Date.now(), moved:0};
+    tapKand = {x:e.clientX, y:e.clientY, mål:e.target};
+  } else if(ptrs.size===2){
+    tapKand = null;
+    const a=[...ptrs.values()];
+    pinchStart = {d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),
+      mx:(a[0].x+a[1].x)/2, my:(a[0].y+a[1].y)/2, s:T.s, tx:T.x, ty:T.y};
+  }
+});
+vy.addEventListener('pointermove', e=>{
+  if(!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(ptrs.size===1 && panStart){
+    const dx=e.clientX-panStart.px, dy=e.clientY-panStart.py;
+    panStart.moved=Math.max(panStart.moved, Math.hypot(dx,dy));
+    if(panStart.moved>8) tapKand=null;
+    T.x=panStart.tx+dx; T.y=panStart.ty+dy; applyT();
+  } else if(ptrs.size===2 && pinchStart){
+    const a=[...ptrs.values()];
+    const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+    const mx=(a[0].x+a[1].x)/2, my=(a[0].y+a[1].y)/2;
+    let ns=Math.min(14, Math.max(minS, pinchStart.s*d/pinchStart.d));
+    T.s=ns;
+    T.x=mx-(pinchStart.mx-pinchStart.tx)*(ns/pinchStart.s);
+    T.y=my-(pinchStart.my-pinchStart.ty)*(ns/pinchStart.s);
+    applyT();
+  }
+});
+function ptrUpp(e){
+  ptrs.delete(e.pointerId);
+  if(ptrs.size<2) pinchStart=null;
+  if(ptrs.size===0 && tapKand && panStart && panStart.moved<=8 && Date.now()-panStart.t<420){
+    hanteraTapp(tapKand);
+  }
+  if(ptrs.size===0) panStart=null;
+}
+vy.addEventListener('pointerup', ptrUpp);
+vy.addEventListener('pointercancel', e=>{ptrs.delete(e.pointerId); pinchStart=null; panStart=null;});
+
+function hanteraTapp(tap){
+  const nu = Date.now();
+  const pinEl = tap.mål.closest ? tap.mål.closest('.pin') : null;
+  if(pinEl){ // tryck på befintlig nål
+    clearTimeout(tapTimer);
+    öppnaPunkt(pinEl.dataset.id);
+    return;
+  }
+  if(nu - sistaTapp < 300){ // dubbeltapp = zooma
+    clearTimeout(tapTimer); sistaTapp=0;
+    const ns=Math.min(14, T.s*2.1);
+    T.x=tap.x-(tap.x-T.x)*(ns/T.s); T.y=tap.y-(tap.y-T.y)*(ns/T.s); T.s=ns;
+    applyT(); return;
+  }
+  sistaTapp = nu;
+  tapTimer = setTimeout(()=>{
+    const r = karta.getBoundingClientRect();
+    const x=(tap.x-r.left)/r.width, y=(tap.y-r.top)/r.height;
+    if(x<0||x>1||y<0||y>1) return;
+    nyPunkt(x,y);
+  }, 300);
+}
+
+/* ============ punkter ============ */
+function nästaNr(serie){
+  const n = punkter.filter(p=>p.serie===serie)
+    .map(p=>parseInt(p.nr.slice(1))).reduce((a,b)=>Math.max(a,b),0);
+  return serie + (n+1);
+}
+function nyPunkt(x,y){
+  nyPunktTemp = {id:crypto.randomUUID(), serie:'M', nr:nästaNr('M'), x, y,
+    omrade:OMRADEN[0], bet:'E', not:'', ts:new Date().toISOString(), metaSynkad:false, ny:true};
+  aktivPunkt = nyPunktTemp;
+  visaPunktSheet(true);
+}
+async function sparaAktiv(){
+  if(!aktivPunkt) return;
+  delete aktivPunkt.ny;
+  if(!punkter.find(p=>p.id===aktivPunkt.id)){ punkter.push(aktivPunkt); }
+  await idbPut('punkter', aktivPunkt);
+  nyPunktTemp = null;
+  ritaPinnar(); uppdateraStat();
+}
+function punktFoton(pid){ return foton.filter(f=>f.punktId===pid); }
+
+function ritaPinnar(){
+  document.querySelectorAll('.pin').forEach(e=>e.remove());
+  for(const p of punkter){
+    const el=document.createElement('div');
+    el.className='pin'+(p.serie==='G'?' g':'')+(aktivPunkt&&aktivPunkt.id===p.id?' vald':'');
+    const pf=punktFoton(p.id);
+    if(pf.length && pf.every(f=>f.uploaded) && p.metaSynkad!==false) el.classList.add('klar');
+    el.dataset.id=p.id;
+    el.style.left=(p.x*100)+'%'; el.style.top=(p.y*100)+'%';
+    el.style.setProperty('--invz',(1/T.s).toFixed(4));
+    el.innerHTML=`<div class="knopp"><span>${p.nr}</span></div><div class="synk"></div>`;
+    stage.appendChild(el);
+  }
+}
+function uppdateraStat(){
+  $('#statPunkter').firstChild.textContent = punkter.length;
+  $('#statFoton').firstChild.textContent = foton.length;
+  const osynk = foton.filter(f=>!f.uploaded).length;
+  $('#btnSynk').textContent = osynk ? `Synka (${osynk})` : 'Synkat';
+  $('#btnSynk').classList.toggle('warn', !!osynk);
+}
+
+/* ============ sheets ============ */
+function visaSheet(id){ $('#skikt').classList.add('synlig'); $(id).classList.add('synlig'); }
+function stängSheets(){
+  $('#skikt').classList.remove('synlig');
+  document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('synlig'));
+  if(nyPunktTemp && !punktFoton(nyPunktTemp.id).length && nyPunktTemp.ny){
+    nyPunktTemp=null; aktivPunkt=null; // osparad tom punkt förkastas
+  }
+  aktivPunkt=null; ritaPinnar();
+}
+$('#skikt').addEventListener('click', stängSheets);
+
+function visaPunktSheet(ärNy){
+  const p = aktivPunkt;
+  $('#pNr').textContent = p.nr;
+  $('#pNr').classList.toggle('g', p.serie==='G');
+  $('#pTitel').textContent = ärNy ? 'Ny punkt' : 'Punkt';
+  $('#btnSerie').style.display = ärNy ? '' : 'none';
+  $('#btnSerie').textContent = p.serie==='M' ? 'Gör till generell (G)' : 'Gör till mätpunkt (M)';
+  $('#pNot').value = p.not || '';
+  // områden
+  const omr=$('#pOmraden'); omr.innerHTML='';
+  for(const o of OMRADEN){
+    const c=document.createElement('button');
+    c.className='chip'+(p.omrade===o?' vald':''); c.textContent=o;
+    c.onclick=()=>{p.omrade=o; [...omr.children].forEach(x=>x.classList.remove('vald')); c.classList.add('vald'); sparaAktivTyst();};
+    omr.appendChild(c);
+  }
+  const bet=$('#pBet'); bet.innerHTML='';
+  for(const bx of BETS){
+    const c=document.createElement('button');
+    c.className='chip bet'+(p.bet===bx?' vald':''); c.textContent=bx;
+    c.onclick=()=>{p.bet=bx; [...bet.children].forEach(x=>x.classList.remove('vald')); c.classList.add('vald'); sparaAktivTyst();};
+    bet.appendChild(c);
+  }
+  ritaFotoGrid();
+  ritaPinnar();
+  visaSheet('#sheetPunkt');
+}
+async function sparaAktivTyst(){ if(aktivPunkt && !aktivPunkt.ny){ aktivPunkt.metaSynkad=false; await idbPut('punkter',aktivPunkt);} }
+
+function ritaFotoGrid(){
+  const g=$('#pFoton'); g.innerHTML='';
+  const pf=punktFoton(aktivPunkt.id);
+  if(!pf.length){ g.innerHTML='<div class="tom" style="grid-column:1/-1;padding:8px 0">Inga foton än.</div>'; return; }
+  for(const f of pf){
+    const d=document.createElement('div');
+    d.className='tumnagel'+(f.uploaded?' klar':'');
+    const im=document.createElement('img');
+    im.src=URL.createObjectURL(f.blob);
+    d.appendChild(im);
+    const u=document.createElement('div'); u.className='upl'; d.appendChild(u);
+    d.onclick=()=>visaFull(f);
+    g.appendChild(d);
+  }
+}
+function öppnaPunkt(id){
+  const p=punkter.find(x=>x.id===id); if(!p) return;
+  aktivPunkt=p; visaPunktSheet(false);
+}
+
+/* serie-växel (M/G) */
+$('#btnSerie').onclick=()=>{
+  if(!aktivPunkt) return;
+  aktivPunkt.serie = aktivPunkt.serie==='M' ? 'G' : 'M';
+  aktivPunkt.nr = nästaNr(aktivPunkt.serie);
+  if(aktivPunkt.serie==='G' && aktivPunkt.omrade===OMRADEN[0]) aktivPunkt.omrade='Generellt';
+  visaPunktSheet(true);
+};
+$('#pNot').addEventListener('input', e=>{ if(aktivPunkt){aktivPunkt.not=e.target.value; } });
+$('#pNot').addEventListener('blur', ()=>{ if(aktivPunkt && !aktivPunkt.ny) sparaAktivTyst(); });
+
+/* ============ kamera ============ */
+const kamIn=$('#kamIn');
+$('#btnKamera').onclick=async ()=>{
+  if(!aktivPunkt) return;
+  await sparaAktiv();           // punkten finns innan kameran öppnas
+  aktivPunkt = punkter.find(p=>p.id===aktivPunkt.id) || aktivPunkt;
+  kamIn.value=''; kamIn.click();
+};
+kamIn.addEventListener('change', async ()=>{
+  const fil=kamIn.files && kamIn.files[0];
+  if(!fil || !aktivPunkt) return;
+  toast('Sparar bild ...');
+  try{
+    const blob=await krympBild(fil, 1600, .8);
+    const f={id:crypto.randomUUID(), punktId:aktivPunkt.id, blob, ts:new Date().toISOString(), uploaded:false};
+    foton.push(f);
+    await idbPut('foton', f);
+    ritaFotoGrid(); ritaPinnar(); uppdateraStat();
+    toast(`Bild sparad på ${aktivPunkt.nr}`);
+    synkaTyst();
+  }catch(err){ toast('Kunde inte spara bilden: '+err.message); }
+});
+async function krympBild(fil, maxDim, kval){
+  let bmp;
+  try{ bmp=await createImageBitmap(fil, {imageOrientation:'from-image'}); }
+  catch(e){ bmp=await createImageBitmap(fil); }
+  const k=Math.min(1, maxDim/Math.max(bmp.width,bmp.height));
+  const c=document.createElement('canvas');
+  c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k);
+  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('toBlob')), 'image/jpeg', kval));
+}
+
+/* ============ fullbild ============ */
+let fullFoto=null;
+function visaFull(f){
+  fullFoto=f;
+  $('#fullImg').src=URL.createObjectURL(f.blob);
+  $('#full').classList.add('synlig');
+}
+$('#fullStang').onclick=()=>$('#full').classList.remove('synlig');
+$('#fullBort').onclick=async ()=>{
+  if(!fullFoto) return;
+  if(!confirm('Ta bort bilden?')) return;
+  foton=foton.filter(x=>x.id!==fullFoto.id);
+  await idbDel('foton', fullFoto.id);
+  $('#full').classList.remove('synlig');
+  ritaFotoGrid(); ritaPinnar(); uppdateraStat();
+};
+
+/* ============ klar / radera / dela ============ */
+$('#btnKlar').onclick=async ()=>{ await sparaAktiv(); stängSheets(); };
+$('#btnRadera').onclick=async ()=>{
+  if(!aktivPunkt) return;
+  if(!confirm(`Ta bort ${aktivPunkt.nr} och punktens foton?`)) return;
+  const pid=aktivPunkt.id;
+  punkter=punkter.filter(p=>p.id!==pid);
+  for(const f of punktFoton(pid)) await idbDel('foton', f.id);
+  foton=foton.filter(f=>f.punktId!==pid);
+  await idbDel('punkter', pid);
+  stängSheets(); uppdateraStat();
+};
+$('#btnDela').onclick=async ()=>{
+  if(!aktivPunkt) return;
+  const pf=punktFoton(aktivPunkt.id);
+  if(!pf.length){toast('Inga foton att dela.');return;}
+  const filer=pf.map((f,i)=>new File([f.blob],
+    `${PROJEKT}_${aktivPunkt.nr}_${i+1}.jpg`,{type:'image/jpeg'}));
+  if(navigator.canShare && navigator.canShare({files:filer})){
+    try{ await navigator.share({files:filer, title:aktivPunkt.nr}); }catch(e){}
+  } else toast('Delning stöds inte här. Använd Synka i stället.');
+};
+
+/* ============ lista ============ */
+$('#btnLista').onclick=()=>{
+  const c=$('#listaRader'); c.innerHTML='';
+  if(!punkter.length){ c.innerHTML='<div class="tom">Inga punkter än. Tryck på kartan för att börja.</div>'; }
+  const sorterade=[...punkter].sort((a,b)=>a.nr.localeCompare(b.nr,undefined,{numeric:true}));
+  for(const p of sorterade){
+    const pf=punktFoton(p.id);
+    const rad=document.createElement('button'); rad.className='lrad';
+    const tid=new Date(p.ts).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+    rad.innerHTML=`<span class="nr${p.serie==='G'?' g':''}">${p.nr}</span>
+      <span class="mitt"><b>${p.omrade} · ${p.bet}</b>
+      <span>${pf.length} foto${pf.length===1?'':'n'} · ${tid}${p.not?' · '+p.not:''}</span></span>`;
+    if(pf.length){ const im=document.createElement('img'); im.src=URL.createObjectURL(pf[0].blob); rad.appendChild(im); }
+    rad.onclick=()=>{ stängSheets(); centrera(p); öppnaPunkt(p.id); };
+    c.appendChild(rad);
+  }
+  visaSheet('#sheetLista');
+};
+function centrera(p){
+  const r=vy.getBoundingClientRect();
+  const ns=Math.max(T.s, Math.min(14, (r.width/imgW)*4));
+  T.s=ns; T.x=r.width/2-p.x*imgW*ns; T.y=r.height/2-p.y*imgH*ns; applyT();
+}
+$('#btnSammanst').onclick=async ()=>{
+  const sorterade=[...punkter].sort((a,b)=>a.nr.localeCompare(b.nr,undefined,{numeric:true}));
+  const rader=sorterade.map(p=>{
+    const n=punktFoton(p.id).length;
+    return `${p.nr} | ${p.omrade} | ${p.bet} | ${n} foton${p.not?' | '+p.not:''}`;
+  });
+  const txt=`Förbesiktning Mark FB1, Kv. Stenriket 5, ${new Date().toLocaleDateString('sv-SE')}\n`+
+    `${punkter.length} punkter, ${foton.length} foton\n\n`+rader.join('\n');
+  try{ await navigator.share({text:txt}); }
+  catch(e){ try{ await navigator.clipboard.writeText(txt); toast('Kopierad till urklipp.'); }catch(x){} }
+};
+
+/* ============ synk till Supabase ============ */
+let synkPågår=false;
+async function synkaTyst(){ if(navigator.onLine) synka(true); }
+async function synka(tyst){
+  if(synkPågår) return; synkPågår=true;
+  let ok=0, fel=0;
+  try{
+    for(const p of punkter){
+      const pf=punktFoton(p.id);
+      const osynkade=pf.filter(f=>!f.uploaded);
+      const behöverMeta=(p.metaSynkad===false) && pf.every(f=>f.uploaded) && !osynkade.length;
+      for(const f of osynkade){
+        try{
+          const path=`foton/${p.nr}_${f.id.slice(0,8)}.jpg`;
+          const r1=await fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${path}`,{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,
+              'Content-Type':'image/jpeg','x-upsert':'true','cache-control':'max-age=31536000'},
+            body:f.blob});
+          if(!r1.ok && r1.status!==409) throw new Error('storage '+r1.status);
+          const r2=await fetch(`${SUPA_URL}/rest/v1/${TABLE}`,{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,
+              'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({projekt:PROJEKT,punkt:p.nr,x:p.x,y:p.y,omrade:p.omrade,
+              bet:p.bet,notering:p.not||null,foto_path:path,klient_ts:f.ts})});
+          if(!r2.ok) throw new Error('rest '+r2.status);
+          f.uploaded=true; await idbPut('foton',f); ok++;
+        }catch(e){ fel++; }
+      }
+      if(behöverMeta || (p.metaSynkad===false && !pf.length)){
+        try{
+          const r3=await fetch(`${SUPA_URL}/rest/v1/${TABLE}`,{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+SUPA_KEY,'apikey':SUPA_KEY,
+              'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({projekt:PROJEKT,punkt:p.nr,x:p.x,y:p.y,omrade:p.omrade,
+              bet:p.bet,notering:p.not||null,foto_path:null,klient_ts:p.ts})});
+          if(r3.ok){ p.metaSynkad=true; await idbPut('punkter',p); }
+        }catch(e){}
+      }
+    }
+  } finally {
+    synkPågår=false; uppdateraStat(); ritaPinnar();
+    if(!tyst){
+      if(fel) toast(`Synk: ${ok} uppladdade, ${fel} kvar (försök igen vid täckning).`);
+      else if(ok) toast(`Synk klar: ${ok} foton uppladdade.`);
+      else toast('Allt är redan synkat.');
+    }
+  }
+}
+$('#btnSynk').onclick=()=>synka(false);
+window.addEventListener('online', synkaTyst);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) synkaTyst(); });
+
+/* ============ övrigt ============ */
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('synlig');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('synlig'), 2400);
+}
+$('#hintOk').onclick=()=>{ $('#hint').remove(); localStorage.setItem('fb1-hint','1'); };
+
+/* ============ start ============ */
+(async function(){
+  await idbOpen();
+  punkter = await idbAll('punkter');
+  foton = await idbAll('foton');
+  if(localStorage.getItem('fb1-hint')) { const h=$('#hint'); if(h) h.remove(); }
+  ritaPinnar(); uppdateraStat();
+  if(karta.complete && karta.naturalWidth){ karta.dispatchEvent(new Event('load')); }
+})();
+</script>
+</body>
+</html>
