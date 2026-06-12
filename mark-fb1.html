@@ -298,7 +298,7 @@ const ptrs = new Map();
 let panStart=null, pinchStart=null, tapKand=null, tapTimer=null, sistaTapp=0;
 
 vy.addEventListener('pointerdown', e=>{
-  vy.setPointerCapture(e.pointerId);
+  try{ vy.setPointerCapture(e.pointerId); }catch(_){ }
   ptrs.set(e.pointerId, {x:e.clientX, y:e.clientY});
   if(ptrs.size===1){
     panStart = {px:e.clientX, py:e.clientY, tx:T.x, ty:T.y, t:Date.now(), moved:0};
