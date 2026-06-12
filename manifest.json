@@ -1,0 +1,13 @@
+{
+  "name": "Mark FB1 · Stenriket 5",
+  "short_name": "Mark FB1",
+  "start_url": "./mark-fb1.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F3ED",
+  "theme_color": "#0F3A5D",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

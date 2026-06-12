@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mark FB1">
 <meta name="theme-color" content="#0F3A5D">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Mark FB1 · Stenriket 5</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -70,6 +72,10 @@
   .pin .synk{position:absolute;top:-3px;right:-1px;width:11px;height:11px;border-radius:50%;
     background:var(--gron);border:1.5px solid #fff;display:none}
   .pin.klar .synk{display:block}
+  .pin .ant{position:absolute;top:-8px;left:-10px;min-width:17px;height:17px;border-radius:9px;
+    background:#fff;color:var(--ink);font-family:var(--disp);font-weight:700;font-size:11px;
+    line-height:17px;text-align:center;border:1.5px solid var(--ink);padding:0 3px;display:none}
+  .pin.harfoton .ant{display:block}
   /* ---------- hintrad ---------- */
   #hint{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 12px);
     z-index:20;background:rgba(15,58,93,.92);color:#fff;border-radius:8px;
@@ -392,10 +398,11 @@ function ritaPinnar(){
     el.className='pin'+(p.serie==='G'?' g':'')+(aktivPunkt&&aktivPunkt.id===p.id?' vald':'');
     const pf=punktFoton(p.id);
     if(pf.length && pf.every(f=>f.uploaded) && p.metaSynkad!==false) el.classList.add('klar');
+    if(pf.length) el.classList.add('harfoton');
     el.dataset.id=p.id;
     el.style.left=(p.x*100)+'%'; el.style.top=(p.y*100)+'%';
     el.style.setProperty('--invz',(1/T.s).toFixed(4));
-    el.innerHTML=`<div class="knopp"><span>${p.nr}</span></div><div class="synk"></div>`;
+    el.innerHTML=`<div class="knopp"><span>${p.nr}</span></div><div class="synk"></div><div class="ant">${pf.length}</div>`;
     stage.appendChild(el);
   }
 }
@@ -481,11 +488,11 @@ $('#pNot').addEventListener('blur', ()=>{ if(aktivPunkt && !aktivPunkt.ny) spara
 
 /* ============ kamera ============ */
 const kamIn=$('#kamIn');
-$('#btnKamera').onclick=async ()=>{
+$('#btnKamera').onclick=()=>{
   if(!aktivPunkt) return;
-  await sparaAktiv();           // punkten finns innan kameran öppnas
-  aktivPunkt = punkter.find(p=>p.id===aktivPunkt.id) || aktivPunkt;
-  kamIn.value=''; kamIn.click();
+  kamIn.value='';
+  kamIn.click();                // synkront: iOS kräver obruten användargest
+  sparaAktiv();                 // punkten sparas i bakgrunden medan kameran är öppen
 };
 kamIn.addEventListener('change', async ()=>{
   const fil=kamIn.files && kamIn.files[0];
